@@ -1,24 +1,10 @@
 open Reprocessing;
 
-type state = {
-  iterations: int,
-  zoom: float,
-  contrast: int,
-  screenHeight: float,
-  screenWidth: float,
-};
+type state = {iterations: int};
 
 let setup = env => {
-  let height = 500;
-  let width = 500;
-  Env.size(~width, ~height, env);
-  {
-    iterations: 10,
-    zoom: 3.,
-    contrast: 20,
-    screenHeight: float_of_int(height),
-    screenWidth: float_of_int(width),
-  };
+  Env.size(~width=500, ~height=500, env);
+  {iterations: 10};
 };
 
 let rec belongsToSet =
@@ -44,15 +30,21 @@ let drawText = (iterations, env) =>
     env,
   );
 
-let draw =
-    ({iterations, zoom, contrast, screenHeight, screenWidth} as state, env) => {
+let draw = ({iterations} as state, env) => {
   let panX = (-2.);
   let panY = (-1.5);
-  if (iterations < 30) {
-    for (i in 0 to int_of_float(screenWidth)) {
-      for (j in 0 to int_of_float(screenHeight)) {
-        let x = float_of_int(i) *. zoom /. screenWidth +. panX;
-        let y = float_of_int(j) *. zoom /. screenHeight +. panY;
+  let zoom = 3.;
+  let contrast = 20;
+  let screenHeight = Env.height(env);
+  let screenWidth = Env.width(env);
+  let screenHeightf = float_of_int(screenHeight);
+  let screenWidthf = float_of_int(screenWidth);
+  switch (iterations) {
+  | i when i < 30 =>
+    for (i in 0 to screenWidth) {
+      for (j in 0 to screenHeight) {
+        let x = float_of_int(i) *. zoom /. screenWidthf +. panX;
+        let y = float_of_int(j) *. zoom /. screenHeightf +. panY;
         let count = belongsToSet(~maxIterations=iterations, ~x, ~y, ());
         let countDiff = iterations - count;
         let colorProp = contrast * countDiff;
@@ -62,8 +54,8 @@ let draw =
       };
     };
     drawText(iterations, env);
-    {...state, iterations: iterations + 1};
-  } else {
+    {iterations: iterations + 1};
+  | _ =>
     drawText(iterations, env);
     state;
   };
